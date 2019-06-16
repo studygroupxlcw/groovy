@@ -1,0 +1,118 @@
+group 'com.pt'
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'idea'
+version = '1.0.0'
+sourceCompatibility = 1.8
+ext.parentDir = "${project.name}-${project.version}-install"
+ext.releaseDir = "${ext.parentDir}/${project.name}-${project.version}"
+
+// 编码改为 UTF-8, 否则编译源码的时候会出错
+// 这个需要根据自己的 java 源码的编码进行调整
+[compileJava, compileTestJava, javadoc]*.options*.encoding = 'UTF-8'
+
+
+dependencies {
+    compile(
+            fileTree(dir: "../lib", include: "**/*.jar")
+    )
+}
+
+jar {
+    baseName = 'dynamic'
+    String path = ""
+    configurations.runtime.each {
+        path += "lib/"+it.name+" "
+    }
+//    path += "./${project.name}-${project.version}.jar"
+    manifest{
+//        attributes 'Main-Class':'testdynamic.ClassLoaderApp'
+        attributes 'Main-Class':'testdynamic.GroovyShellApp'
+//        attributes 'Main-Class':'testdynamic.ScriptEngineApp'
+        attributes 'Class-Path':path
+    }
+}
+
+/*task cleanAll(dependsOn: [clean]) {
+    doLast {
+        delete(parentDir)
+        delete("${parentDir}.zip")
+    }
+}*/
+
+clean {
+    delete(parentDir)
+    delete("${parentDir}.zip")
+}
+
+task release(dependsOn: [clean, jar]) {
+    doLast {
+        copy {
+            from 'build/libs'
+            into "${project.ext.releaseDir}/"
+        }
+    }
+    doLast {
+        copy {
+//            from '../lib'
+            from configurations.runtime
+            into "${project.ext.releaseDir}/lib"
+        }
+    }
+    doLast {
+        copy {
+            from 'conf'
+            into "${project.ext.releaseDir}/conf"
+        }
+    }
+}
+
+/*task packjar (){
+    doLast {
+        copy {
+            from configurations.runtime
+            into "test"
+        }
+    }
+}
+task packjar2 (type:Copy){
+    from configurations.runtime
+    into "test2"
+}*/
+
+
+task pack(type: Zip) {
+    archiveName = "${parentDir}.zip"
+    include '*'
+    include '*/*'
+    include '*/**'
+    //    exclude '*/*.jar'
+//    include '*/**/*is*'
+
+    from parentDir
+    destinationDir new File("./")
+}
+
+task pack2() {
+    doLast {
+        description 'zip ${project.ext.releaseDir}'
+
+        task xxx(type: Zip) {
+            baseName = "test"
+            include '*'
+            include '*/*'
+            include '*/**'
+            from new File("${parentDir}")
+
+        }
+        xxx.execute()
+    }
+}
+
+
+
+
+
+
+
